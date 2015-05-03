@@ -16,3 +16,5 @@ let app = express()
 if(NODE_ENV === 'development') {
   app.use(morgan('dev'))
 }
+
+app.listen(PORT, () => console.log(`Listening @ http://127.0.0.1:${PORT}`))
