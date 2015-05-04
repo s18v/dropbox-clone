@@ -4,7 +4,7 @@ let express = require('express')
 let nodeify = require('bluebird-nodeify')
 let morgan = require('morgan')
 let mime = require('mime-types')
-
+let rimraf = require('rimraf')
 // songbird works during runtime. Hence, not assigning it to a variable
 require('songbird')
 
@@ -24,7 +24,7 @@ if(NODE_ENV === 'development') {
 
 app.listen(PORT, () => console.log(`Listening @ http://127.0.0.1:${PORT}`))
 
-app.get('*', sendHeaders, (req, res) => {
+app.get('*', setFileMeta, sendHeaders, (req, res) => {
   if (res.body) {
     res.json(res.body)
     return
@@ -32,31 +32,51 @@ app.get('*', sendHeaders, (req, res) => {
   fs.createReadStream(req.filePath).pipe(res)
 })
 
-app.head('*', sendHeaders, (req, res) => res.end())
+app.head('*', setFileMeta, sendHeaders, (req, res) => res.end())
+
+/* rather than splitting into separate functions, the 
+calls are split into middlewares and then called*/
+function setFileMeta(req, res, next) {
+  // ROOT_DIR and __dirname are the same
+  // resolve() resolves the path of any '.' characters
+  req.filePath = path.resolve(path.join(ROOT_DIR, req.url))
+  if(req.filePath.indexOf(ROOT_DIR) !== 0) {
+     res.send(400, 'Invalid Path')
+     return
+   }
+  // Way to call nodeify on a promise; check for async function too
+  fs.promise.stat(req.filePath)
+    .then(stat => req.stat = stat, () => req.stat = null)
+    .nodeify(next)
+}
 
 function sendHeaders(req, res, next) {
   // promise is connected to the next callback (use of nodeify)
+  // nodeify calls next even if it succeeds or fails
   nodeify(async () => {
-    // ROOT_DIR and __dirname are the same
-    let filePath = path.resolve(path.join(ROOT_DIR, req.url))
-    req.filePath = filePath
-    if(filePath.indexOf(ROOT_DIR) !== 0) {
-      res.send(400, 'Invalid Path')
-      return
-    }
     // If the path is a directory, return the contents
-    let stat = await fs.promise.stat(filePath)
-    if(stat.isDirectory()) {
-      let files = await fs.promise.readdir(filePath)
+    if(req.stat.isDirectory()) {
+      let files = await fs.promise.readdir(req.filePath)
       res.body = JSON.stringify(files)
       res.setHeader('Content-Length', res.body.length)
       res.setHeader('Content-Type', 'application/json')
       return 
     }
     
-    res.setHeader('Content-Length', stat.size)
-    let contentType = mime.contentType(path.extname(filePath))
+    res.setHeader('Content-Length', req.stat.size)
+    let contentType = mime.contentType(path.extname(req.filePath))
     res.setHeader('Content-Type', contentType)   
   }(), next)
-  //.catch(next) //next is called if this promise results in an error
+  //.catch(next) //next is called only if this promise results in an error
 }
+
+app.delete('*', setFileMeta, (req, res, next) => {
+  async () => {
+    if (!req.stat) return res.send(400, 'Invalid Path')
+    
+    if (req.stat.isDirectory()) {
+     await rimraf.promise(req.filePath)
+    } else await fs.promise.unlink(req.filePath)
+    res.end()
+  }().catch(next) 
+})
