@@ -25,6 +25,10 @@ if(NODE_ENV === 'development') {
 
 app.listen(PORT, () => console.log(`Listening @ http://127.0.0.1:${PORT}`))
 
+// HEADERS
+app.head('*', setFileMeta, sendHeaders, (req, res) => res.end())
+
+// GET
 app.get('*', setFileMeta, sendHeaders, (req, res) => {
   if (res.body) {
     res.json(res.body)
@@ -33,8 +37,7 @@ app.get('*', setFileMeta, sendHeaders, (req, res) => {
   fs.createReadStream(req.filePath).pipe(res)
 })
 
-app.head('*', setFileMeta, sendHeaders, (req, res) => res.end())
-
+// DELETE
 app.delete('*', setFileMeta, (req, res, next) => {
   async () => {
     if (!req.stat) return res.send(400, 'Invalid Path')
@@ -46,7 +49,7 @@ app.delete('*', setFileMeta, (req, res, next) => {
   }().catch(next) 
 })
 
-
+// PUT
 app.put('*', setFileMeta, setDirDetails, (req, res, next) => {
   async () => {
     if (req.stat) return res.send(405, 'File Exists')
@@ -56,6 +59,7 @@ app.put('*', setFileMeta, setDirDetails, (req, res, next) => {
   }().catch(next)
 })
 
+// POST
 app.post('*', setFileMeta, setDirDetails, (req, res, next) => {
   async () => {
     if (!req.stat) return res.send(405, 'File does not exist')
