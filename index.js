@@ -6,6 +6,7 @@ let morgan = require('morgan')
 let mime = require('mime-types')
 let rimraf = require('rimraf')
 let mkdirp = require('mkdirp')
+let argv = require('yargs').argv
 // songbird works during runtime. Hence, not assigning it to a variable
 require('songbird')
 
