@@ -16,3 +16,5 @@
 <li>Server will serve from <code>--dir</code> or cwd as root</li>
 <li>Client will sync from server over TCP to cwd or CLI <code>dir</code> argument</li>
 </ul>
+
+<a href="https://github.com/sarankumarv/dropbox-clone/blob/master/dropbox_clone.gif">Video Walkthrough</a>
