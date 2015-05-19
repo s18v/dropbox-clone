@@ -12,7 +12,7 @@
 <li>HEAD request to get just the GET headers </li>
 <li>PUT requests to create new directories and files with content</li>
 <li>POST requests to update the contents of a file</li>
-<li>ELETE requests to delete files and folders</li>
+<li>DELETE requests to delete files and folders</li>
 <li>Server will serve from <code>--dir</code> or cwd as root</li>
 <li>Client will sync from server over TCP to cwd or CLI <code>dir</code> argument</li>
 </ul>
