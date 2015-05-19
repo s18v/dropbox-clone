@@ -12,7 +12,7 @@ let JsonSocket = require('json-socket')
 // songbird works during runtime. Hence, not assigning it to a variable
 require('songbird')
 
-const NODE_ENV = process.env.NODE_ENV;
+const NODE_ENV = process.env.NODE_ENV; //gets the env
 const PORT = process.env.PORT || 8000;
 // need a root directory for the file system api implementation
 const ROOT_DIR = argv.dir ? path.resolve(argv.dir) : path.resolve(process.cwd());
