@@ -23,16 +23,7 @@ let app = express()
 // use() method is for adding the middleware 
 app.use(morgan('dev'))
 
-// TCP Functionality
-let TCP_PORT = '6789'
-let TCP_HOST = '127.0.0.1'
-let server = net.createServer()
-server.on('connection', function (socket) {
-  socket = new JsonSocket(socket);
-})
-server.listen(TCP_PORT)
-
-app.listen(PORT,() => console.log(`Listening @ http://127.0.0.1:${PORT}`))
+app.listen(PORT,() => console.log(`HTTP Server listening @ http://127.0.0.1:${PORT}`))
 
 // HEADERS
 app.head('*', setFileMeta, sendHeaders,(req, res) => res.end())
@@ -117,10 +108,39 @@ function sendHeaders(req, res, next) {
       res.setHeader('Content-Type', 'application/json')
       return
     }
-    
     res.setHeader('Content-Length', req.stat.size)
     let contentType = mime.contentType(path.extname(req.filePath))
     res.setHeader('Content-Type', contentType)
   }(), next)
   //.catch(next) //next is called only if this promise results in an error
 }
+
+// TCP Functionality
+let TCP_PORT = `8001`
+let server = net.createServer()
+
+
+server.listen(TCP_PORT)
+console.log(`TCP Server listening @ http://127.0.0.1:${TCP_PORT}`)
+
+server.on('connection', function (socket) {
+  socket = new JsonSocket(socket);
+  socket.on('message', function(message) {
+    
+    let serverFileLocation = path.join(process.cwd(), message.fileName)
+    let clientFileLocation = path.join(message.location, message.fileName)
+
+      if (message.action === 'write') {
+        fs.promise.writeFile(serverFileLocation, message.contents)
+        .then(console.log(`file created at ${serverFileLocation}`))
+
+        fs.promise.writeFile(clientFileLocation, message.contents)
+        .then(socket.sendMessage(`file created at ${clientFileLocation}`))
+        // console.log(message.updated)
+        // console.log(path)
+    } 
+    else if (message.action === 'delete') {
+
+    }
+  })
+})
